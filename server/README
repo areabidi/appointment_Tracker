@@ -1,0 +1,572 @@
+You're building a backend web app to:
+
+Track patient appointments
+
+Allow patients to assign access to caregivers
+
+Display appointments in a calendar
+
+Use MVC architecture
+
+Use SQL (MySQL/PostgreSQL) as the database
+
+Run everything locally in VS Code
+
+Host later on Render
+
+You created a folder structure in VS Code that organizes your code following the MVC (Model-View-Controller) pattern.
+
+MVC Structure:
+/server
+  /controllers     <-- business logic (e.g. what happens when user logs in)
+  /models          <-- database models/schema definitions
+  /routes          <-- define your API endpoints
+  /middlewares     <-- reusable logic like authentication, error handling
+  server.js        <-- main entry point for Express server
+
+This makes your project:
+
+Modular: easier to maintain and extend
+
+Clean: separates concerns (routes, logic, DB)
+
+Scalable: ready for real-world complexity
+
+-----
+You ran:
+
+npm init -y
+
+
+Which created:
+
+package.json — tracks your dependencies and scripts
+(this created a file called package.json which keeps track of:What your project is called, What tools (packages) it uses, How to run it)
+
+Later, this will also help you deploy to platforms like Render
+----
+npm install express dotenv
+express: a lightweight web server framework for Node.js
+dotenv: allows you to store sensitive data like DB passwords in a .env file
+express – This helps us create the actual server.
+dotenv – This lets us hide private info (like passwords) in a .env file.
+------
+Created a Clean Folder Structure (MVC)
+We made folders that separate our code into different jobs (this is called MVC architecture):
+/server
+  ├── controllers     👈 logic for what your app does
+  ├── models          👈 where your data lives
+  ├── routes          👈 defines what URLs exist (like /login)
+  ├── middlewares     👈 helpers like auth checks
+  ├── server.js       👈 the file that starts the server
+  └── .env            👈 stores private settings like database password
+--------
+This is the file that starts your backend server.
+
+Code overview:
+require('dotenv').config();          // Load environment variables
+const express = require('express');  // Import Express
+const app = express();               // Initialize Express app
+
+app.use(express.json());             // Parse JSON bodies in requests
+
+// Basic test route
+app.get('/', (req, res) => {
+  res.send('Hello from Appointment Tracker backend!');
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+Why this matters:
+Starts your server
+Sets up JSON body parsing (important for APIs)
+Confirms everything is working with a test route at /
+(Created the server.js File: We made the brain of the backend — server.js.
+It does this:Starts the server, Accepts requests (like someone visiting your site), Returns a simple response)
+-----
+node server.js
+Which started your server on http://localhost:3000 and let you test it in the browser.
+
+----------------------------------------------------------
+Where We’re Headed Next
+🔜 Coming up:
+
+Create your first route, controller, and model
+
+Connect to a SQL database (MySQL or PostgreSQL)
+
+Implement JWT auth
+
+Set up calendar appointment management
+
+Add patient-controlled access sharing
+
+Connect to a frontend (React or other)
+💡 TL;DR Summary
+What You Did	Why It Matters
+Set up folder structure (MVC)	Keeps your app organized and scalable
+Initialized Node project	Makes it a working backend project
+Installed Express and dotenv	Needed for web server and environment setup
+Created and ran server.js	Proved your server works and routes function
+----------------------------
+Why did we run npm install sequelize sqlite3 inside the server folder?
+Imagine your project like a big toolbox.
+npm is like a helper robot that goes and fetches tools for you.
+Your package.json file is like a list of tools your project needs.
+node_modules is the toolbox where all those tools live.
+
+You are working on the backend, which lives inside the server folder.
+What happens when you run:
+npm install sequelize sqlite3
+npm looks at your project list (package.json) in the server folder.
+It grabs the tools named Sequelize (helps us talk to the database) and SQLite3 (our actual database).
+It puts those tools inside a toolbox folder called node_modules — inside server/.
+Now, your backend code can use those tools to do its job!
+
+project-root/
+├── client/               # Your frontend stuff
+├── server/
+│   ├── controller/
+│   ├── model/
+│   ├── routes/
+│   ├── node_modules/      ← Backend dependencies live here
+│   ├── package.json       ← Backend dependencies listed here
+│   ├── server.js
+│   └── database.js
+
+
+JSON FILE: 
+{
+  // The name of your project/folder
+  "name": "server",
+  // The version of your project
+  "version": "1.0.0",
+  // Description about your project (empty for now)
+  "description": "",
+  // The main entry file for Node.js (you can change this to server.js)
+  "main": "index.js",
+  // Scripts to run commands via npm (like start, test)
+  "scripts": {
+    // Run the app with: npm start (you can add this)
+    // "start": "node server.js",
+    // Default test script (prints error for now)
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+
+  // Keywords related to your project (empty for now)
+  "keywords": [],
+
+  // Author name (empty for now)
+  "author": "",
+
+  // License for your project
+  "license": "ISC",
+
+  // Packages your app depends on to work
+  "dependencies": {
+    "dotenv": "^17.2.2",   // Loads environment variables from .env files
+    "express": "^5.1.0",   // Web framework for handling HTTP requests
+    "sequelize": "^6.37.7",// ORM to work with SQL databases
+    "sqlite3": "^5.1.7"    // SQLite database driver
+  }
+}
+---------------
+Awesome! Now that your backend is set up with:
+
+Express server running
+
+Sequelize connected to SQLite database
+
+package.json dependencies installed properly
+
+Here’s what’s next in your backend development:
+1. Create Your Models
+
+Define the tables you’ll need in the database. For example:
+
+User model (for patients, drivers, admin, etc.)
+
+Appointment model (date, time, patient ID, driver ID, status, etc.)
+
+You’ll create these as Sequelize models inside your model/ folder.
+
+
+MODELS:
+1. User
+
+What it is:
+The main entity representing any user in the system — whether they are a patient, driver, admin, or any combination.
+
+Key fields:
+id, name, email, password, etc.
+
+Relations:
+
+Has many UserRole records → a user can have multiple roles (patient, driver, admin).
+
+Has an optional one-to-one relation to Patient (if the user is a patient).
+
+Has many Trip records as a driver.
+
+Has many Appointment records (both as patient and driver via patient link).
+
+2. Role
+
+What it is:
+Defines possible roles a user can have, like "patient", "driver", or "admin".
+
+Relations:
+
+Has many UserRole records linking users to this role.
+
+3. UserRole
+
+What it is:
+Join table that connects users and roles to allow multiple roles per user.
+
+How it works:
+Each record links one user to one role. Together, these define the user’s roles.
+
+4. Patient
+
+What it is:
+Holds patient-specific details like date of birth, emergency contact or extra notes
+
+Relations:
+
+Has a one-to-one relation with a User who has the “patient” role.
+
+Has many Trip records (trips involving this patient).
+
+Has many Appointment records.
+
+5. Trip
+
+What it is:
+Records a trip where a driver (User) drives a patient.
+
+Relations:
+
+Each trip belongs to exactly one Patient.
+
+Each trip belongs to exactly one User as the driver.
+
+6. Appointment
+
+What it is:
+Records an appointment with the doctor.
+
+Relations:
+
+Linked to one Patient.
+
+Optionally linked to one User as the driver (who drove the patient).
+
+Stores details like appointment date, doctor name, and notes.
+
+Summary of relationships:
+From Table	To Table	Relationship Type	Purpose
+User	UserRole	One-to-many	Assign multiple roles to user
+Role	UserRole	One-to-many	Link role to multiple users
+UserRole	User/Role	Many-to-one	Bridge table for many-to-many
+User	Patient	One-to-one	User is a patient (extra data)
+Patient	Trip	One-to-many	Patient has multiple trips
+User (Driver)	Trip	One-to-many	Driver drives multiple trips
+Patient	Appointment	One-to-many	Patient has multiple appointments
+User (Driver)	Appointment	Zero-or-one to many	Driver associated with appointments optionally
+Visual (simplified):
+User <---- UserRole ----> Role
+  |
+  |-- Patient (one-to-one)
+        |
+        |-- Trip (many)
+        |     \
+        |      \--> Driver (User)
+        |
+        |-- Appointment (many)
+               \
+                \--> Driver (User) [optional]
+
+
+If you didn’t have a UserRole table:
+You might try to store roles directly on the user, like a single role column.
+But that limits you to only one role per user.
+Or you'd have to store roles as a comma-separated string or JSON array, which complicates querying and indexing.
+
+
+
+What we did:
+Patient links one-to-one with User.
+Appointment links many-to-one with Patient.
+Trip links many-to-one with Appointment.
+Trip links many-to-one with User as Driver (using alias).
+
+
+-----------------
+
+2. Create Controllers
+
+Controllers hold the logic that handles requests and interacts with models.
+
+Example controller actions:
+Register a user, Login a user, Create an appointment, Update appointment status, List appointments for a patient or driver
+
+
+project-root/
+│
+├── server/
+│   ├── config/              ← 🔧 Configuration files
+│   │   └── database.js      ← ✅ Setup Sequelize here
+│
+│   ├── models/              ← 🧠 All your Sequelize models
+│   │   ├── User.js
+│   │   ├── Role.js
+│   │   ├── Patient.js
+│   │   └── etc...
+│
+│   ├── controllers/         ← 🧠 Business logic here (next step)
+│   │   ├── UserController.js
+│   │   └── etc...
+│
+│   ├── routes/              ← 🌐 API routes for each resource
+│   │   ├── userRoutes.js
+│   │   └── etc...
+│
+│   ├── server.js            ← 🚀 Starts your Express app
+│   └── sync.js              ← 🧱 Optional: sync all models to DB
+│
+├── .env                     ← 🔐 Secrets like DB name, PORT
+├── package.json             ← 📦 Dependencies
+
+
+1. Make a file to connect to the database(file configh/database.js):
+database.js = Connects to the Database
+
+📍 Location: server/config/database.js
+
+Think of this as the plug that connects your app to the database.
+
+It sets up the connection using Sequelize and SQLite.
+
+What it does:
+
+Tells your app where the database is (e.g., a file called database.sqlite)
+
+Prepares Sequelize to work with that database
+
+✅ You usually only touch this once unless you change your database setup.
+
+
+
+✅ 2. Sync the Models (Create Tables)
+
+📁 Location:
+Option 1: Inside server.js (on app start)
+Option 2: In a separate file like server/sync.js for one-time syncing
+Models are like blueprints for your data:
+
+“This is what a User looks like — they have a name, email, password…”
+
+You already made model files for:
+
+User
+
+Role
+
+Patient
+
+Appointment
+
+Trip
+
+Now you need to tell Sequelize:
+
+“Hey! Go turn those blueprints into real tables in the database!”
+
+You do this in a file called sync.js (you’ll only run this one time or when updating your tables).
+server/sync.js
+
+In your terminal, type:
+
+node server/sync.js
+
+
+This will:
+Connect to the database
+Read your models
+Create real tables (like Users, Appointments, etc.) in the database
+
+
+Step	            What it means
+config/database.js	Set up your database connection
+sync.js	            Create your actual tables in the database
+controllers/
+and routes/     	Add features like login, booking, assigning rides
+
+We could also just make one file that has sync and DB:
+
+Merging them into One File (Optional Style)
+
+You can make one file that:
+
+Connects to the database
+
+Imports all models
+
+Syncs them
+
+✅ Example: server/setupDatabase.js
+// setupDatabase.js (or call it syncAndConnect.js)
+const { Sequelize } = require('sequelize');
+
+// 1. Connect to SQLite database
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: './database.sqlite',
+  logging: false,
+});
+
+// 2. Define models (or import them from separate files)
+const User = require('./models/User');
+const Role = require('./models/Role');
+const UserRole = require('./models/UserRole');
+const Patient = require('./models/Patient');
+const Appointment = require('./models/Appointment');
+const Trip = require('./models/Trip');
+
+// 3. Sync models — create tables
+sequelize.sync({ force: false }) // or alter: true
+  .then(() => {
+    console.log('✅ Database connected and tables synced!');
+  })
+  .catch((err) => {
+    console.error('❌ Sync failed:', err);
+  });
+
+module.exports = sequelize;
+
+
+💡 Why People Keep database.js and sync.js Separate in Bigger Apps:
+| Reason         Why                                           
+| Flexibility  | You might want to sync tables separately from starting your server |
+"🔨 Development	You may want to rebuild the database without restarting the whole app
+🚀 Production	You might want to start the server only, without changing the database
+🐛 Testing	You can test your database models without running your full web server"
+| Cleaner Code | Each file does **one job** (Single Responsibility Principle)       |
+| Teamwork     | Makes it easier to test and update parts separately                |
+
+
+Reminder: 
+| Action           | What it does                          | Run with         |
+| ---------------- | ------------------------------------- | ---------------- |
+| **Start server** | Makes the app available to users      | `node server.js` |
+| **Sync models**  | Builds or updates the database tables | `node sync.js`   |
+
+
+| Concept            | Meaning                                                             |
+| ------------------ | ------------------------------------------------------------------- |
+| `sequelize.sync()` | Creates or updates real tables in the database from your model code |
+| Without `sync()`   | Your models exist in code only — nothing is stored in the database  |
+| Like...            | Telling the builder to use your blueprints and start building!      |
+
+do not manually write SQL commands like:
+CREATE TABLE Users (...);
+Because you're using Sequelize, which is an ORM (Object-Relational Mapper), it writes those SQL commands for you, automatically, based on the models you define in JavaScript.
+
+
+3. Set Up Routes
+
+Create route files (in a routes/ folder) to expose API endpoints.
+
+Example:
+
+POST /users/register — register new user
+
+POST /users/login — login user
+
+GET /appointments — list appointments
+
+POST /appointments — create appointment
+
+server/routes/userRoutes.js
+| Line                        | What it Does                                                    |
+| --------------------------- | --------------------------------------------------------------- |
+| `express.Router()`          | Creates a mini Express app for grouping related routes          |
+| `/register` + `POST`        | Listens for new user registrations (with name, email, password) |
+| `/login` + `POST`           | Listens for login attempts (email + password)                   |
+| `/` + `GET`                 | Returns a list of all users (optional, for admin/debug)         |
+| `UserController.function()` | Calls the logic we’ll define next in the controller             |
+| `module.exports = router`   | Makes the routes available to the main app (`server.js`)        |
+
+
+
+
+
+
+
+4. Implement Authentication
+
+Use something like JWT (JSON Web Tokens) to handle user authentication and protect your routes.
+
+Users log in and receive a token.
+
+Token is sent with requests to authorize access.
+
+
+We need this to securely store passwords.
+npm install bcrypt
+
+
+
+
+5. Test Your API
+
+Use tools like Postman or Insomnia to test your API routes.
+
+
+             🧍 User (Postman or Frontend)
+                        │
+                        ▼
+         Sends user info to backend via HTTP POST
+                        │
+                        ▼
+        📬 Express Route (/users/register)
+                        │
+                        ▼
+          Calls → UserController.registerUser
+                        │
+                        ▼
+   ┌──────────────────────────────────────────────────────┐
+   │              🧠 Controller Logic                      │
+   │ ──────────────────────────────────────────────────── │
+   │ 1. Get info from req.body                            │
+   │ 2. Check if email already exists in DB               │
+   │ 3. Hash password using bcrypt                        │
+   │ 4. Create a new User using Sequelize                 │
+   │ 5. Return success or error message                   │
+   └──────────────────────────────────────────────────────┘
+                        │
+                        ▼
+        🗂️ Sequelize talks to SQLite Database
+                        │
+                        ▼
+      📦 Saves new user (INSERT INTO Users ...)
+                        │
+                        ▼
+           ✅ Sends back response to Postman
+
+                ┌────────────────────────┐
+                │  "User registered!" ✅ │
+                │  userId: 1             │
+                └────────────────────────┘
+
+
+6. Move to Frontend
+
+Once backend APIs are working, start building the frontend UI to connect with your backend.
+
+
