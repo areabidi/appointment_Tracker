@@ -565,6 +565,78 @@ Use tools like Postman or Insomnia to test your API routes.
                 └────────────────────────┘
 
 
+                             🧍 User (Postman or Frontend)
+                        │
+                        ▼
+        Sends login info (email & password)
+            to /users/login via HTTP POST
+                        │
+                        ▼
+        📬 Express Route (/users/login)
+                        │
+                        ▼
+         Calls → UserController.loginUser
+                        │
+                        ▼
+   ┌──────────────────────────────────────────────────────┐
+   │              🧠 Controller Logic                      │
+   │ ──────────────────────────────────────────────────── │
+   │ 1. Get email and password from req.body              │
+   │ 2. Look up user by email using Sequelize             │
+   │ 3. If not found → send error                         │
+   │ 4. Compare password using bcrypt                     │
+   │ 5. If match → send success message & userId          │
+   │ 6. If no match → send error                          │
+   └──────────────────────────────────────────────────────┘
+                        │
+                        ▼
+        🗂️ Sequelize talks to SQLite Database
+                        │
+                        ▼
+     🔍 Finds user row where email = '...'
+                        │
+                        ▼
+             ✅ Sends back response
+
+               ┌─────────────────────────────┐
+               │ "Login successful!" ✅      │
+               │  userId: 1                  │
+               └─────────────────────────────┘
+
+📁 server/
+│
+├── 📂 models/
+│   └── User.js         <-- Sequelize model (defines DB table)
+│
+├── 📂 controllers/
+│   └── UserController.js  <-- Logic (e.g. register, login)
+│
+├── 📂 routes/
+│   └── userRoutes.js   <-- Express routes (/register, /login)
+│
+├── 📂 config/
+│   └── database.js     <-- Sequelize setup & DB connection
+│
+├── server.js           <-- Main app file (starts server, connects everything)
+└── .env                <-- DB config, secret keys, etc.
+
+
+
+Frontend/Postman
+      │
+      ▼
+  Route (userRoutes.js)
+      │
+      ▼
+Controller (UserController.js)
+      │
+      ▼
+Model (User.js via Sequelize)
+      │
+      ▼
+Database (SQLite)
+
+
 6. Move to Frontend
 
 Once backend APIs are working, start building the frontend UI to connect with your backend.
