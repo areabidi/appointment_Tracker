@@ -9,13 +9,16 @@ Prepares Sequelize to work with that database
 
 
 // server/config/database.js
-const { Sequelize } = require('sequelize');
 
-// This creates the connection to a file-based database called database.sqlite
+const { Sequelize } = require('sequelize');  // Import Sequelize ORM
+const path = require('path');                  // Import path module to handle file paths
+
+// Create a new Sequelize instance, connecting to a SQLite database file
 const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite', // This is like your database file
-  logging: false,               // Turn off messages in the terminal (optional)
+  dialect: 'sqlite',                           // Use SQLite dialect
+  storage: path.join(__dirname, '../database.sqlite'),  // Path to SQLite database file (relative to this file)
+  logging: false,                              // Disable SQL query logging in the console (optional)
 });
 
-module.exports = sequelize; // export it so you can use it in other files
+module.exports = sequelize;                    // Export the Sequelize instance for use in other files
+

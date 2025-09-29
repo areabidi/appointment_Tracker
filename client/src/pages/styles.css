@@ -1,0 +1,192 @@
+/* styles.css */
+/*
+div {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 10px;
+  background-color: #f0f4f8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}*/
+
+
+
+
+/* Small button variant */
+.small-btn {
+  width: auto !important;     /* Override any other width */
+  min-width: 80px;            /* Optional: set a minimum width */
+  font-size: 12px;
+  padding: 4px 8px;
+  height: 30px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 5px;
+  display: inline-block;      /* Prevent stretching */
+  transition: background-color 0.3s ease;
+
+
+  font-size: 12px;
+  padding: 4px 8px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.small-btn:hover {
+  background-color: #0056b3;
+}
+
+.form-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 10px;
+  background-color: #f0f4f8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+p {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #2a7f62; /* subtle green for success message */
+}
+
+/* Calendar container flex layout */
+.calendar-container {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  flex-wrap: wrap; /* allows wrapping on smaller screens */
+}
+
+/* Calendar section */
+.calendar-section {
+  flex: 2 1 700px; /* flex-grow, flex-shrink, flex-basis */
+  max-width: 700px;
+  min-width: 300px;
+}
+
+/* Appointment section */
+.appointment-section {
+  flex: 1 1 500px;
+  max-width: 500px;
+  min-width: 280px;
+}
+
+/* Grid container */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+/* Day cells */
+.day-cell {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+  overflow: hidden;
+  font-size: 1rem;
+  min-height: 120px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
+  min-width: 100px;
+}
+
+/* Selected day highlight */
+.day-cell.selected {
+  background-color: #e0f7fa;
+}
+
+/* Appointment summary inside day cell */
+.appointment-summary {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+
+/* Hide empty grid cells */
+.empty-cell {
+  visibility: hidden;
+  cursor: default;
+}
+
+/* Responsive for small devices */
+@media (max-width: 768px) {
+  .calendar-container {
+    flex-direction: column;
+    padding: 10px;
+  }
+  
+
+  .calendar-section,
+  .appointment-section {
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .day-cell {
+    min-width: auto;
+    font-size: 0.9rem;
+    min-height: 100px;
+    padding: 6px;
+  }
+
+}

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AddPatientForm from './AddPatientForm';
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -8,16 +9,61 @@ const months = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
+function formatDate(year, month, day) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function formatDateTimeLocal(date) {
+  const pad = num => String(num).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export default function Calendar() {
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(new Date().getMonth());
   const [appointments, setAppointments] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
+
+  // Patients list
+  const [patients, setPatients] = useState([]);
+
+  // NEW: which panel to show: 'appointment', 'patient', or null (none)
+  const [activePanel, setActivePanel] = useState(null);
+
+// userID logged in currently:
+  const [currentUserId, setCurrentUserId] = useState(null);
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.id) {
+      setCurrentUserId(user.id);
+    }
+  }, []);
+
+
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:5000/api/appointments', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setAppointments(data);
+      })
+      .catch(err => console.error('Failed to load appointments:', err));
+  }, []);
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+
   const [formData, setFormData] = useState({
     title: '',
-    startTime: '',
-    endTime: '',
+    startDateTime: '',
+    endDateTime: '',
     location: '',
     doctor: '',
     companion: '',
@@ -25,14 +71,11 @@ export default function Calendar() {
     noteImage: null,
   });
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-
   function resetForm() {
     setFormData({
       title: '',
-      startTime: '',
-      endTime: '',
+      startDateTime: '',
+      endDateTime: '',
       location: '',
       doctor: '',
       companion: '',
@@ -61,18 +104,11 @@ export default function Calendar() {
   function handleSubmit(e) {
     e.preventDefault();
     if (!formData.title) return alert('Title is required');
-    if (!selectedDay) return alert('Select a day first');
+    if (!formData.startDateTime) return alert('Start date/time is required');
+    if (!formData.endDateTime) return alert('End date/time is required');
+    if (formData.endDateTime <= formData.startDateTime) return alert('End date/time must be after start date/time');
 
-    if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
-      return alert('End time must be after start time');
-    }
-
-    const appt = {
-      day: selectedDay,
-      month,
-      year,
-      ...formData,
-    };
+    const appt = { ...formData };
 
     if (editingIndex !== null) {
       setAppointments(appts => {
@@ -85,24 +121,37 @@ export default function Calendar() {
     }
 
     resetForm();
+    setActivePanel(null);  // Close appointment form panel after submit
+    setSelectedDay(null);
   }
 
   function selectDay(day) {
-    setSelectedDay(day);
+    setSelectedDay(prev => (prev === day ? null : day));
     resetForm();
+    if (day !== selectedDay) {
+      setActivePanel('appointment'); // Show appointment form when a day is selected
+    } else {
+      setActivePanel(null); // Close if day deselected
+    }
   }
 
   function editAppointment(index) {
     const appt = appointments[index];
-    setSelectedDay(appt.day);
+    const dt = new Date(appt.startDateTime);
+    setYear(dt.getFullYear());
+    setMonth(dt.getMonth());
+    setSelectedDay(dt.getDate());
     setFormData({ ...appt });
     setEditingIndex(index);
+    setActivePanel('appointment');  // Show appointment form panel
   }
 
   function deleteAppointment(index) {
     if (window.confirm('Delete this appointment?')) {
       setAppointments(appts => appts.filter((_, i) => i !== index));
       resetForm();
+      setActivePanel(null);
+      setSelectedDay(null);
     }
   }
 
@@ -115,6 +164,7 @@ export default function Calendar() {
     }
     setSelectedDay(null);
     resetForm();
+    setActivePanel(null);
   }
 
   function handleNextMonth() {
@@ -126,256 +176,298 @@ export default function Calendar() {
     }
     setSelectedDay(null);
     resetForm();
+    setActivePanel(null);
   }
 
-  // ✅ FIXED: Only show appointments for current day, month, and year
   function appointmentsForDay(day) {
-    return appointments.filter(
-      appt => appt.day === day && appt.month === month && appt.year === year
-    );
+    const dayStart = new Date(year, month, day, 0, 0, 0);
+    const dayEnd = new Date(year, month, day, 23, 59, 59);
+
+    return appointments.filter(appt => {
+      const apptStart = new Date(appt.startDateTime);
+      const apptEnd = new Date(appt.endDateTime);
+      return apptStart <= dayEnd && apptEnd >= dayStart;
+    });
   }
 
+  // Style objects kept as you had them
   const dayStyle = {
     border: '1px solid #ccc',
-    padding: '8px',
+    borderRadius: '6px',
+    padding: '10px',
     boxSizing: 'border-box',
     cursor: 'pointer',
     overflow: 'hidden',
     fontSize: '1rem',
-    flexGrow: 1,
-    minWidth: 0,
-    height: 'auto',
+    minHeight: '120px',
+    backgroundColor: '#fff',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
   };
 
   const gridStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '4px',
+    gap: '8px',
     width: '100%',
   };
 
+  // Handler for saving patient and closing form
+  function handleSavePatient(patient) {
+    setPatients(prev => [...prev, patient]);
+    setActivePanel(null); // Close patient form panel after save
+  }
+
   return (
-    <div style={{ maxWidth: 900, margin: 'auto', padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 20, gap: 10 }}>
-        <button onClick={handlePrevMonth} style={{ padding: '6px 12px', fontSize: '1rem' }}>
-          &lt; Prev
-        </button>
-
-        <select
-          value={month}
-          onChange={e => setMonth(Number(e.target.value))}
-          style={{ fontSize: '1.1rem', padding: '6px' }}
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <h1 style={{ flex: 1, textAlign: 'center', margin: 0 }}>Appointment Tracker</h1>
+        <button
+          className="small-btn"
+          onClick={() => setActivePanel(prev => (prev === 'patient' ? null : 'patient'))}
         >
-          {months.map((m, i) => (
-            <option key={i} value={i}>{m}</option>
-          ))}
-        </select>
-
-        <select
-          value={year}
-          onChange={e => setYear(Number(e.target.value))}
-          style={{ fontSize: '1.1rem', padding: '6px' }}
-        >
-          {years.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-
-        <button onClick={handleNextMonth} style={{ padding: '6px 12px', fontSize: '1rem' }}>
-          Next &gt;
+          Add Patient
         </button>
+        <button className="small-btn">List of Patients</button>
       </div>
 
-      <div style={{ ...gridStyle, fontWeight: 'bold', textAlign: 'center' }}>
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day}>{day}</div>
-        ))}
-      </div>
-
-      <div style={gridStyle}>
-        {[...Array(firstDayOfWeek)].map((_, i) => (
-          <div key={`empty-${i}`} />
-        ))}
-
-        {[...Array(daysInMonth)].map((_, i) => {
-          const dayNum = i + 1;
-          const dayAppointments = appointmentsForDay(dayNum);
-
-          return (
-            <div
-              key={dayNum}
-              onClick={() => selectDay(dayNum)}
-              style={{
-                ...dayStyle,
-                backgroundColor: selectedDay === dayNum ? '#e0f7fa' : '#fff',
-                minHeight: '100px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                gap: '2px',
-                fontSize: '1.1rem',
-              }}
-              title={dayAppointments.length ? dayAppointments.map(a => a.title).join(', ') : ''}
-            >
-              <strong style={{ marginBottom: 6 }}>{dayNum}</strong>
-              {dayAppointments.slice(0, 3).map((appt, i) => (
-                <div key={i} style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                  {(appt.startTime ? appt.startTime : '')}
-                  {appt.endTime ? ` - ${appt.endTime}` : ''}
-                  {appt.startTime || appt.endTime ? ' — ' : ''}
-                  {appt.title}
-                </div>
+      {/* Container for calendar and side panel */}
+      <div
+        className="calendar-container"
+        style={{
+          display: 'flex',
+          gap: 40,
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          padding: 20,
+          flexWrap: 'wrap',
+        }}
+      >
+        {/* Calendar */}
+        <div style={{ flex: 2, maxWidth: 700 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+            <button onClick={handlePrevMonth}>&lt; Prev</button>
+            <select value={month} onChange={e => setMonth(Number(e.target.value))}>
+              {months.map((m, i) => (
+                <option key={i} value={i}>{m}</option>
               ))}
-              {dayAppointments.length > 3 && <div>+{dayAppointments.length - 3} more</div>}
-            </div>
-          );
-        })}
-      </div>
+            </select>
+            <select value={year} onChange={e => setYear(Number(e.target.value))}>
+              {years.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <button onClick={handleNextMonth}>Next &gt;</button>
+          </div>
 
-      {selectedDay && (
-        <div style={{ marginTop: 30 }}>
-          <h2>Appointments on {months[month]} {selectedDay}, {year}</h2>
+          <div style={{ ...gridStyle, fontWeight: 'bold', textAlign: 'center' }}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day}>{day}</div>
+            ))}
+          </div>
 
-          {appointmentsForDay(selectedDay).length === 0 && <p>No appointments for this day.</p>}
+          <div style={gridStyle}>
+            {[...Array(firstDayOfWeek)].map((_, i) => (
+              <div key={`empty-${i}`} style={{ ...dayStyle, visibility: 'hidden', cursor: 'default' }} />
+            ))}
 
-          {appointmentsForDay(selectedDay).map((appt, i) => (
-            <div
-              key={i}
+            {[...Array(daysInMonth)].map((_, i) => {
+              const dayNum = i + 1;
+              const dayAppointments = appointmentsForDay(dayNum);
+
+              return (
+                <div
+                  key={dayNum}
+                  onClick={() => selectDay(dayNum)}
+                  style={{
+                    ...dayStyle,
+                    backgroundColor: selectedDay === dayNum ? '#e0f7fa' : '#fff',
+                  }}
+                >
+                  <strong>{dayNum}</strong>
+                  {dayAppointments.slice(0, 3).map((appt, i) => {
+                    const startTime = new Date(appt.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const endTime = new Date(appt.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          backgroundColor: '#4db6ac',
+                          color: '#fff',
+                          borderRadius: '4px',
+                          padding: '2px 4px',
+                          marginTop: '2px',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={appt.title}
+                        onClick={e => {
+                          e.stopPropagation();
+                          editAppointment(appointments.indexOf(appt));
+                        }}
+                      >
+                        {`${startTime}-${endTime}: ${appt.title}`}
+                      </div>
+                    );
+                  })}
+                  {dayAppointments.length > 3 && (
+                    <div style={{ fontSize: '0.7rem', marginTop: '2px' }}>
+                      +{dayAppointments.length - 3} more
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SIDE PANEL: Shows either Add Patient or Appointment Form based on activePanel */}
+        {activePanel && (
+          <div
+            style={{
+              border: '1px solid #ccc',
+              borderRadius: '8px',
+              padding: '20px',
+              minWidth: '320px',
+              maxWidth: '350px',
+              background: '#fafafa',
+              position: 'relative',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              flexShrink: 0,
+            }}
+          >
+            <button
+              onClick={() => setActivePanel(null)}
               style={{
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                padding: 12,
-                marginBottom: 12,
-                backgroundColor: '#fafafa',
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'transparent',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                lineHeight: '1',
               }}
+              aria-label="Close Panel"
             >
-              <div>
-                <strong>
-                  {(appt.startTime ? appt.startTime : '')}
-                  {appt.endTime ? ` - ${appt.endTime}` : ''}
-                  {(appt.startTime || appt.endTime) ? ' — ' : ''}
-                  {appt.title}
-                </strong>
-              </div>
-              {appt.location && <div><em>Location:</em> {appt.location}</div>}
-              {appt.doctor && <div><em>Doctor:</em> {appt.doctor}</div>}
-              {appt.companion && <div><em>Companion:</em> {appt.companion}</div>}
-              {appt.notes && <div><em>Notes:</em> {appt.notes}</div>}
-              {appt.noteImage && (
-                <img
-                  src={appt.noteImage}
-                  alt="Note attachment"
-                  style={{ maxWidth: '100%', maxHeight: 200, marginTop: 8, borderRadius: 4 }}
-                />
-              )}
-              <div style={{ marginTop: 8 }}>
-                <button onClick={() => editAppointment(appointments.indexOf(appt))} style={{ marginRight: 10 }}>
-                  Edit
-                </button>
-                <button onClick={() => deleteAppointment(appointments.indexOf(appt))}>
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+              &times;
+            </button>
 
-          <h3>{editingIndex !== null ? 'Edit Appointment' : 'Add Appointment'}</h3>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 500 }}>
-            <input
-              type="text"
-              name="title"
-              placeholder="Title *"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              style={{ padding: 8, fontSize: '1rem' }}
-            />
+            {activePanel === 'patient' && (
+              <AddPatientForm currentUserId={currentUserId} onSave={handleSavePatient} />
+            )}
 
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-              <label>
-                Start Time:
-                <input
-                  type="time"
-                  name="startTime"
-                  value={formData.startTime}
-                  onChange={handleChange}
-                  style={{ padding: 8, fontSize: '1rem', marginLeft: 8 }}
-                />
-              </label>
-              <label>
-                End Time:
-                <input
-                  type="time"
-                  name="endTime"
-                  value={formData.endTime}
-                  onChange={handleChange}
-                  style={{ padding: 8, fontSize: '1rem', marginLeft: 8 }}
-                />
-              </label>
-            </div>
-
-            <input
-              type="text"
-              name="location"
-              placeholder="Location"
-              value={formData.location}
-              onChange={handleChange}
-              style={{ padding: 8, fontSize: '1rem' }}
-            />
-
-            <input
-              type="text"
-              name="doctor"
-              placeholder="Doctor's Name"
-              value={formData.doctor}
-              onChange={handleChange}
-              style={{ padding: 8, fontSize: '1rem' }}
-            />
-
-            <input
-              type="text"
-              name="companion"
-              placeholder="Who is taking the patient?"
-              value={formData.companion}
-              onChange={handleChange}
-              style={{ padding: 8, fontSize: '1rem' }}
-            />
-
-            <textarea
-              name="notes"
-              placeholder="Notes"
-              rows={3}
-              value={formData.notes}
-              onChange={handleChange}
-              style={{ padding: 8, fontSize: '1rem' }}
-            />
-
-            <div>
-              <input type="file" accept="image/*" onChange={handleImageUpload} />
-              {formData.noteImage && (
-                <div style={{ marginTop: 8 }}>
-                  <img
-                    src={formData.noteImage}
-                    alt="Note attachment"
-                    style={{ maxWidth: '100%', maxHeight: 150, marginTop: 5, borderRadius: 4 }}
+            {activePanel === 'appointment' && selectedDay && (
+              <form onSubmit={handleSubmit}>
+                <h2>{editingIndex !== null ? 'Edit' : 'Add'} Appointment on {months[month]} {selectedDay}, {year}</h2>
+                <div>
+                  <label>Title: *</label>
+                  <input
+                    name="title"
+                    type="text"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
                   />
+                </div>
+                <div>
+                  <label>Start Date & Time: *</label>
+                  <input
+                    name="startDateTime"
+                    type="datetime-local"
+                    value={formData.startDateTime}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label>End Date & Time: *</label>
+                  <input
+                    name="endDateTime"
+                    type="datetime-local"
+                    value={formData.endDateTime}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label>Location:</label>
+                  <input
+                    name="location"
+                    type="text"
+                    value={formData.location}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label>Doctor:</label>
+                  <input
+                    name="doctor"
+                    type="text"
+                    value={formData.doctor}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label>Companion:</label>
+                  <input
+                    name="companion"
+                    type="text"
+                    value={formData.companion}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label>Notes:</label>
+                  <textarea
+                   style={{
+                  fontFamily: 'inherit',
+                  fontSize: '1rem',
+                  padding: '0.3em 0.5em',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  resize: 'vertical',
+                  minHeight: '3em',
+                }}
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label>Note Image:</label>
+                  <input
+                    name="noteImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
+                  {formData.noteImage && (
+                    <img src={formData.noteImage} alt="Note" style={{ maxWidth: '100%', marginTop: 10 }} />
+                  )}
+                </div>
+                <button type="submit">{editingIndex !== null ? 'Update' : 'Add'} Appointment</button>
+                {editingIndex !== null && (
                   <button
                     type="button"
-                    onClick={() => setFormData(fd => ({ ...fd, noteImage: null }))}
-                    style={{ marginTop: 5 }}
+                    onClick={() => deleteAppointment(editingIndex)}
+                    style={{ marginLeft: 10, backgroundColor: 'red', color: 'white' }}
                   >
-                    Remove Image
+                    Delete
                   </button>
-                </div>
-              )}
-            </div>
-
-            <button type="submit" style={{ padding: 10, fontSize: '1.1rem', cursor: 'pointer' }}>
-              {editingIndex !== null ? 'Save Changes' : 'Add Appointment'}
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
+                )}
+              </form>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

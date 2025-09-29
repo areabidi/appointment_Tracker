@@ -5,6 +5,7 @@ import App from './App';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Calendar from './pages/Calendar';
+import DashBoard from './pages/DashBoard';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/calendar" element={<Calendar />} />
+         //<Route path="/DashBoard" element={<DashBoard/>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

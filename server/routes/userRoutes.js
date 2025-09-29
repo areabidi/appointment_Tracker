@@ -18,9 +18,12 @@ const UserController = require('../controllers/UserController');
 router.post('/register', UserController.registerUser);
 
 // Route to login a user
-router.post('/login', UserController.loginUser);
-
+//router.post('/login', UserController.loginUser);
+router.post('/login', UserController.loginUser);        // ❗️must be exactly like this
 // Optional: Get all users
 router.get('/', UserController.getAllUsers);
+
+
+
 
 module.exports = router;

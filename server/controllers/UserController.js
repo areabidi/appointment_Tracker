@@ -1,22 +1,34 @@
 const bcrypt = require('bcrypt');
+const { Sequelize } = require('sequelize');
 const User = require('../models/User');
 
 const UserController = {
 
   // ✅ Register New User
   registerUser: async (req, res) => {
-    const { name, email, username, phone, password } = req.body;
+    const { fullName, email, username, phone, password } = req.body;
 
     try {
-      const existingUser = await User.findOne({ where: { email } });
+      // Check if a user with the same email or username exists
+      const existingUser = await User.findOne({
+        where: {
+          [Sequelize.Op.or]: [
+            { email },
+            { username }
+          ]
+        }
+      });
+
       if (existingUser) {
-        return res.status(400).json({ error: 'User already exists' });
+        return res.status(400).json({ error: 'Email or username already in use' });
       }
 
+      // Hash the password before saving
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Create new user
       const newUser = await User.create({
-        name,
+        fullName,
         email,
         username,
         phone,
@@ -27,7 +39,7 @@ const UserController = {
     } catch (err) {
       res.status(500).json({ error: 'Registration failed', details: err.message });
     }
-  }, // ✅ Comma added here
+  },
 
   // 🔐 Login Existing User
   loginUser: async (req, res) => {

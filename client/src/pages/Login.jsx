@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // For redirecting after login
+import './styles.css'; // Import shared styles
+import { Link } from 'react-router-dom';
+
 
 export default function Login() {
   const navigate = useNavigate(); // React Router hook to navigate programmatically
@@ -24,7 +27,7 @@ export default function Login() {
 
     try {
       // Send login request to backend
-      const res = await fetch('http://localhost:3000/users/login', {
+      const res = await fetch('http://localhost:5000/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData), // Send email and password
@@ -34,6 +37,10 @@ export default function Login() {
 
       if (res.ok) {
         setMessage('Login successful!');
+        // Example login response: { userId: 123, message: 'Login successful' }
+        //localStorage.setItem('user', JSON.stringify({ id: response.userId }));
+        localStorage.setItem('user', JSON.stringify({ id: data.userId }));
+
         localStorage.setItem('token', data.token); // Save JWT token in local storage
         navigate('/calendar'); // Redirect to calendar page after login
       } else {
@@ -47,8 +54,8 @@ export default function Login() {
   }
 
   return (
-    <div>
-      <h2>Login</h2>
+    <div  className="form-container">
+      <h2>Appointment Tracker</h2>
 
       {/* Show success or error messages */}
       {message && <p>{message}</p>}
@@ -71,8 +78,10 @@ export default function Login() {
           onChange={handleChange}
           required
         />
+       
         <button type="submit">Login</button>
       </form>
+     <Link to="/register">Register now</Link>
     </div>
   );
 }
